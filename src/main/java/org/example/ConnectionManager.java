@@ -1,59 +1,72 @@
 package org.example;
 
+import com.mchange.v2.c3p0.ComboPooledDataSource;
 import lombok.Getter;
 import org.fusesource.jansi.Ansi;
 
+import java.beans.PropertyVetoException;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 public class ConnectionManager
 {
-    // Just a hardcoded IP to a test VPS, would probably be in some sort of config in production
+    private static final ScheduledThreadPoolExecutor SCHEDULED_THREAD_POOL_EXECUTOR = new ScheduledThreadPoolExecutor(4);
     private static final String HOST_NAME = "167.114.128.206";
     private static final String DATABASE_NAME = "test";
 
     @Getter
-    private Connection connection;
-    private final String username;
-    private final String password;
+    private final ComboPooledDataSource comboPooledDataSource;
 
     public ConnectionManager(String username, String password)
     {
-        this.username = username;
-        this.password = password;
+        this.comboPooledDataSource = new ComboPooledDataSource();
+
+        try { this.comboPooledDataSource.setDriverClass("com.mysql.cj.jdbc.Driver"); }
+        catch (PropertyVetoException exception)
+        {
+            System.out.println(Ansi.ansi().fgBrightRed().a("Failed to find MySQL Driver.").reset());
+            exception.printStackTrace();
+            System.exit(1);
+        }
+
+        this.comboPooledDataSource.setJdbcUrl("jdbc:mysql://" + HOST_NAME + ":3306/" + DATABASE_NAME);
+        this.comboPooledDataSource.setUser(username);
+        this.comboPooledDataSource.setPassword(password);
+        this.comboPooledDataSource.setMinPoolSize(4);
+        this.comboPooledDataSource.setInitialPoolSize(4);
+        this.comboPooledDataSource.setMaxPoolSize(8);
+
+        System.out.println(Ansi.ansi().fgBrightGreen().a("Attempting MySQL connection...").reset());
+        long startTime = System.currentTimeMillis();
+        this.getConnection().whenComplete((connection, throwable) ->
+        {
+            System.out.println(Ansi.ansi().fgBrightGreen().a("Connection successful ").fgBrightMagenta().a("(" + (System.currentTimeMillis() - startTime) + "ms)").reset());
+            try { connection.close(); }
+            catch (SQLException exception) { exception.printStackTrace(); }
+        });
     }
 
-    public ScheduledFuture<?> connect()
+    public CompletableFuture<Connection> getConnection()
     {
-        long startTime = System.currentTimeMillis();
-        ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(4);
-        return scheduledThreadPoolExecutor.scheduleAtFixedRate(() ->
+        CompletableFuture<Connection> connectionFuture = new CompletableFuture<>();
+
+        SCHEDULED_THREAD_POOL_EXECUTOR.execute(() ->
         {
             try
             {
-                connection = DriverManager.getConnection("jdbc:mysql://" + HOST_NAME + "/" + DATABASE_NAME + "?useLegacyDatetimeCode=false&serverTimezone=America/New_York"+"&noAccessToProcedureBodies=true"+"&useSSL=false"+"&user=" + this.username + "&password=" + this.password);
-                System.out.println(Ansi.ansi().fgBrightGreen().a("Connection successful ").fgBrightMagenta().a("(" + (System.currentTimeMillis() - startTime) + "ms)").reset());
-                throw new RuntimeException();
+                Connection connection = comboPooledDataSource.getConnection();
+                connectionFuture.complete(connection);
             }
-            catch (SQLException exception) { System.out.println(Ansi.ansi().fgBrightRed().a("Connection attempt failed. Retrying...").reset()); }
-            }, 0, 5, TimeUnit.SECONDS);
-    }
+            catch (SQLException exception)
+            {
+                exception.printStackTrace();
+                System.out.println(Ansi.ansi().fgBrightRed().a("MySQL connection attempt failed.").reset());
+                System.exit(1);
+            }
+        });
 
-    public Callable<Boolean> isConnected()
-    {
-        return () -> ConnectionManager.this.connection != null && !this.connection.isClosed();
-    }
-
-    public void closeConnection()
-    {
-        if (this.connection == null) return;
-
-        try { connection.close(); }
-        catch (SQLException exception) { exception.printStackTrace(); }
+        return connectionFuture;
     }
 }

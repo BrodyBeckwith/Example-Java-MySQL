@@ -14,8 +14,8 @@ repositories {
 
 dependencies {
     implementation 'mysql:mysql-connector-java:8.0.21'
-    implementation 'org.awaitility:awaitility:4.0.3'
     implementation 'org.fusesource.jansi:jansi:1.18'
+    implementation 'com.mchange:c3p0:0.9.5.5'
 }
 
 application {
