@@ -1,0 +1,39 @@
+plugins {
+    id 'com.github.johnrengelman.shadow' version '6.1.0'
+    id "io.freefair.lombok" version "5.2.1"
+    id 'java-library'
+    id 'application'
+}
+
+group 'org.example'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'mysql:mysql-connector-java:8.0.21'
+    implementation 'org.awaitility:awaitility:4.0.3'
+    implementation 'org.fusesource.jansi:jansi:1.18'
+}
+
+application {
+    mainClass = 'org.example.Main'
+}
+
+jar {
+    manifest {
+        attributes(
+                'Class-Path': configurations.compile.collect { it.getName() }.join(' '),
+                'Main-Class': 'org.example.Main'
+        )
+    }
+}
+
+tasks.build.dependsOn tasks.shadowJar
+
+tasks.shadowJar.configure {
+    classifier = null
+    mainClassName = 'org.example.Main'
+}
