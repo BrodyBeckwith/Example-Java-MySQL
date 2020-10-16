@@ -19,7 +19,35 @@ public class ConnectionManager
     @Getter
     private final ComboPooledDataSource comboPooledDataSource;
 
-    public ConnectionManager(String username, String password)
+    private static ConnectionManager instance;
+
+    public static ConnectionManager getInstance()
+    {
+        return instance;
+    }
+
+    private static CompletableFuture<Boolean> loginFuture;
+
+    public static CompletableFuture<Boolean> login(String username, String password)
+    {
+        if (loginFuture != null && !loginFuture.isDone()) return CompletableFuture.completedFuture(false);
+
+        if (instance != null) return CompletableFuture.completedFuture(true);
+
+        loginFuture = new CompletableFuture<>();
+
+        ConnectionManager connectionManager = new ConnectionManager(username, password, loginFuture);
+
+        loginFuture.whenComplete((aBoolean, throwable) ->
+        {
+            if (aBoolean) instance = connectionManager;
+            loginFuture = null;
+        });
+
+        return loginFuture;
+    }
+
+    private ConnectionManager(String username, String password, CompletableFuture<Boolean> future)
     {
         this.comboPooledDataSource = new ComboPooledDataSource();
 
@@ -28,6 +56,7 @@ public class ConnectionManager
         {
             System.out.println(Ansi.ansi().fgBrightRed().a("Failed to find MySQL Driver.").reset());
             exception.printStackTrace();
+            future.complete(false);
             System.exit(1);
         }
 
@@ -37,14 +66,28 @@ public class ConnectionManager
         this.comboPooledDataSource.setMinPoolSize(4);
         this.comboPooledDataSource.setInitialPoolSize(4);
         this.comboPooledDataSource.setMaxPoolSize(8);
+        this.comboPooledDataSource.setAcquireRetryAttempts(3);
 
-        System.out.println(Ansi.ansi().fgBrightGreen().a("Attempting MySQL connection...").reset());
+        System.out.println("Attempting MySQL connection...");
         long startTime = System.currentTimeMillis();
         this.getConnection().whenComplete((connection, throwable) ->
         {
-            System.out.println(Ansi.ansi().fgBrightGreen().a("Connection successful ").fgBrightMagenta().a("(" + (System.currentTimeMillis() - startTime) + "ms)").reset());
-            try { connection.close(); }
+            if (connection == null)
+            {
+                future.complete(false);
+                return;
+            }
+
+            try
+            {
+                connection.close();
+                System.out.println(Ansi.ansi().fgBrightGreen().a("MySQL Connection successful ").fgBrightMagenta().a("(" + (System.currentTimeMillis() - startTime) + "ms)").reset());
+                future.complete(true);
+                return;
+            }
             catch (SQLException exception) { exception.printStackTrace(); }
+
+            future.complete(false);
         });
     }
 
@@ -57,14 +100,16 @@ public class ConnectionManager
             try
             {
                 Connection connection = comboPooledDataSource.getConnection();
+                System.out.println("ok");
                 connectionFuture.complete(connection);
+                return;
             }
             catch (SQLException exception)
             {
-                exception.printStackTrace();
                 System.out.println(Ansi.ansi().fgBrightRed().a("MySQL connection attempt failed.").reset());
-                System.exit(1);
+                exception.printStackTrace();
             }
+            connectionFuture.complete(null);
         });
 
         return connectionFuture;
