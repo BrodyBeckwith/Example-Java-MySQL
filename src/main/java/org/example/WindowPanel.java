@@ -2,8 +2,10 @@ package org.example;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.Rectangle2D;
+import java.beans.PropertyChangeListener;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -65,7 +67,7 @@ public class WindowPanel extends JPanel
 
         if (this.attemptingLogin.get()) this.drawStringToCenterOfScreen(g2, "Attempting login...", Color.white, 64, 16);
         else if (enteredInvalidUsernamePassword) this.drawStringToCenterOfScreen(g2, "Invalid username and password combination.", Color.red, 64, 16);
-        else if (successfulLogin != null)  this.drawStringToCenterOfScreen(g2, "Login Successful", Color.green, 0, 16);
+//        else if (successfulLogin != null)  this.drawStringToCenterOfScreen(g2, "Login Successful", Color.green, 0, 16);
     }
 
     public void drawStringToCenterOfScreen(Graphics2D graphics2D, String text, Color color, int yOffset, int fontSize)
@@ -114,6 +116,51 @@ public class WindowPanel extends JPanel
                     WindowPanel.this.enteredInvalidUsernamePassword = false;
                     WindowPanel.this.remove(usernameTextField);
                     WindowPanel.this.remove(passwordTextField);
+
+                    WindowPanel.this.add(new JButton(new Action()
+                    {
+                        @Override
+                        public Object getValue(String key)
+                        {
+                            return null;
+                        }
+
+                        @Override
+                        public void putValue(String key, Object value)
+                        {
+
+                        }
+
+                        @Override
+                        public void setEnabled(boolean b)
+                        {
+
+                        }
+
+                        @Override
+                        public boolean isEnabled()
+                        {
+                            return false;
+                        }
+
+                        @Override
+                        public void addPropertyChangeListener(PropertyChangeListener listener)
+                        {
+
+                        }
+
+                        @Override
+                        public void removePropertyChangeListener(PropertyChangeListener listener)
+                        {
+
+                        }
+
+                        @Override
+                        public void actionPerformed(ActionEvent e)
+                        {
+
+                        }
+                    }));
                 }
                 else
                 {
