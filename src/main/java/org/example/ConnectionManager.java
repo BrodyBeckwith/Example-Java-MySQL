@@ -3,9 +3,11 @@ package org.example;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import lombok.Getter;
 import org.fusesource.jansi.Ansi;
+import org.fusesource.jansi.AnsiConsole;
 
 import java.beans.PropertyVetoException;
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -13,8 +15,8 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 public class ConnectionManager
 {
     private static final ScheduledThreadPoolExecutor SCHEDULED_THREAD_POOL_EXECUTOR = new ScheduledThreadPoolExecutor(4);
-    private static final String HOST_NAME = "167.114.128.206";
-    private static final String DATABASE_NAME = "test";
+    private static final String HOST_NAME = "satoshi.cis.uncw.edu";
+    private static final String DATABASE_NAME = "narayanFall2020group2";
 
     @Getter
     private final ComboPooledDataSource comboPooledDataSource;
@@ -36,13 +38,15 @@ public class ConnectionManager
 
         loginFuture = new CompletableFuture<>();
 
-        ConnectionManager connectionManager = new ConnectionManager(username, password, loginFuture);
-
-        loginFuture.whenComplete((aBoolean, throwable) ->
+        CompletableFuture.runAsync(() ->
         {
-            if (aBoolean) instance = connectionManager;
-            loginFuture = null;
-        });
+            ConnectionManager connectionManager = new ConnectionManager(username, password, loginFuture);
+            loginFuture.whenComplete((aBoolean, throwable) ->
+            {
+                if (aBoolean) instance = connectionManager;
+                loginFuture = null;
+            });
+        }, SCHEDULED_THREAD_POOL_EXECUTOR);
 
         return loginFuture;
     }
@@ -57,16 +61,17 @@ public class ConnectionManager
             System.out.println(Ansi.ansi().fgBrightRed().a("Failed to find MySQL Driver.").reset());
             exception.printStackTrace();
             future.complete(false);
+            AnsiConsole.systemUninstall();
             System.exit(1);
         }
 
-        this.comboPooledDataSource.setJdbcUrl("jdbc:mysql://" + HOST_NAME + ":3306/" + DATABASE_NAME);
+        this.comboPooledDataSource.setJdbcUrl("jdbc:mysql://" + HOST_NAME + "/" + DATABASE_NAME + "?useLegacyDatetimeCode=false&serverTimezone=America/New_York&noAccessToProcedureBodies=true&useSSL=false");
         this.comboPooledDataSource.setUser(username);
         this.comboPooledDataSource.setPassword(password);
         this.comboPooledDataSource.setMinPoolSize(4);
         this.comboPooledDataSource.setInitialPoolSize(4);
         this.comboPooledDataSource.setMaxPoolSize(8);
-        this.comboPooledDataSource.setAcquireRetryAttempts(3);
+        this.comboPooledDataSource.setAcquireRetryAttempts(0);
 
         System.out.println("Attempting MySQL connection...");
         long startTime = System.currentTimeMillis();
@@ -80,8 +85,17 @@ public class ConnectionManager
 
             try
             {
-                connection.close();
                 System.out.println(Ansi.ansi().fgBrightGreen().a("MySQL Connection successful ").fgBrightMagenta().a("(" + (System.currentTimeMillis() - startTime) + "ms)").reset());
+
+                // Run a test query as an example to show we can interact with the database
+                System.out.println("Show the name level and salary of all staff who earn more than the average of all Staff");
+                ResultSet resultSet = connection.createStatement().executeQuery("select Employee_Name, Level, Salary from Staff where Salary > (select avg(Salary) from Staff);");
+                while (resultSet.next())
+                {
+                    System.out.println(resultSet.getString(1) + " " + resultSet.getString(2) + " " + resultSet.getInt(3));
+                }
+
+                connection.close();
                 future.complete(true);
                 return;
             }
@@ -95,12 +109,11 @@ public class ConnectionManager
     {
         CompletableFuture<Connection> connectionFuture = new CompletableFuture<>();
 
-        SCHEDULED_THREAD_POOL_EXECUTOR.execute(() ->
+        SCHEDULED_THREAD_POOL_EXECUTOR.submit(() ->
         {
             try
             {
                 Connection connection = comboPooledDataSource.getConnection();
-                System.out.println("ok");
                 connectionFuture.complete(connection);
                 return;
             }

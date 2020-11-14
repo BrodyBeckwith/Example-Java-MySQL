@@ -2,10 +2,10 @@ package org.example;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.Rectangle2D;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class WindowPanel extends JPanel
 {
@@ -13,9 +13,10 @@ public class WindowPanel extends JPanel
     JTextField usernameTextField;
     JPasswordField passwordTextField;
 
-    Boolean successfulLogin = null;
-    boolean attemptingLogin = false;
-    boolean enteredInvalidUsernamePassword = false;
+    volatile Boolean successfulLogin = null;
+    private final AtomicBoolean attemptingLogin = new AtomicBoolean(false);
+//    volatile boolean attemptingLogin = false;
+    volatile boolean enteredInvalidUsernamePassword = false;
 
     public WindowPanel(Window window)
     {
@@ -62,7 +63,7 @@ public class WindowPanel extends JPanel
         g2.setColor(Color.decode("#232946"));
         g2.fill(new Rectangle2D.Double(5, 5, this.getWidth() - 10, this.getHeight() - 10));
 
-        if (attemptingLogin) this.drawStringToCenterOfScreen(g2, "Attempting login...", Color.white, 64, 16);
+        if (this.attemptingLogin.get()) this.drawStringToCenterOfScreen(g2, "Attempting login...", Color.white, 64, 16);
         else if (enteredInvalidUsernamePassword) this.drawStringToCenterOfScreen(g2, "Invalid username and password combination.", Color.red, 64, 16);
         else if (successfulLogin != null)  this.drawStringToCenterOfScreen(g2, "Login Successful", Color.green, 0, 16);
     }
@@ -98,12 +99,14 @@ public class WindowPanel extends JPanel
     {
         return event ->
         {
-            if (attemptingLogin) return;
+            if (attemptingLogin.get()) return;
+
+            attemptingLogin.set(true);
 
             CompletableFuture<Boolean> loginFuture = ConnectionManager.login(usernameTextField.getText(), String.valueOf(passwordTextField.getPassword()));
             loginFuture.whenComplete((aBoolean, throwable) ->
             {
-                attemptingLogin = false;
+                attemptingLogin.set(false);
 
                 if (aBoolean)
                 {
@@ -118,7 +121,7 @@ public class WindowPanel extends JPanel
                 }
             });
 
-            attemptingLogin = true;
+//            attemptingLogin = true;
         };
     }
 }

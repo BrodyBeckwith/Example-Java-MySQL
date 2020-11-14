@@ -2,18 +2,14 @@ package org.example;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
 
 public class Window extends JFrame
 {
-//    private static final Dimension GAME_SIZE = new Dimension(480, 700);
-
     public WindowPanel windowPanel;
 
     public Window()
     {
-        super("Test");
+        super("MySQL Example");
 
         try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
         catch (Exception ignored) { }
@@ -30,7 +26,6 @@ public class Window extends JFrame
         this.setExtendedState(this.getExtendedState() | JFrame.MAXIMIZED_BOTH);
 
         this.windowPanel.requestFocusInWindow();
-//        textField.requestFocusInWindow();
 
 
         this.pack();

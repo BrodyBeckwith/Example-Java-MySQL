@@ -13,8 +13,8 @@ repositories {
 }
 
 dependencies {
-    implementation 'mysql:mysql-connector-java:8.0.21'
     implementation 'org.fusesource.jansi:jansi:1.18'
+    implementation 'mysql:mysql-connector-java:8.0.21'
     implementation 'com.mchange:c3p0:0.9.5.5'
 }
 

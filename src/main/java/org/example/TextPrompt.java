@@ -44,11 +44,7 @@ public class TextPrompt extends JLabel implements FocusListener, DocumentListene
 		document = component.getDocument();
 
 		setText( text );
-//		this.setFont(new Font("Segoe UI", Font.PLAIN, 16));
 		setFont( component.getFont() );
-//		setForeground( component.getForeground() );
-//		setBorder( new EmptyBorder(component.getInsets()) );
-//		this.setBorder(component.getbo);
 		setHorizontalAlignment(JLabel.LEADING);
 		this.setVerticalAlignment(JLabel.CENTER);
 
@@ -79,7 +75,7 @@ public class TextPrompt extends JLabel implements FocusListener, DocumentListene
 	 */
 	public void changeAlpha(int alpha)
 	{
-		alpha = alpha > 255 ? 255 : alpha < 0 ? 0 : alpha;
+		alpha = alpha > 255 ? 255 : Math.max(alpha, 0);
 
 		Color foreground = getForeground();
 		int red = foreground.getRed();
@@ -175,23 +171,8 @@ public class TextPrompt extends JLabel implements FocusListener, DocumentListene
 
 		//  Check the Show property and component focus to determine if the
 		//  prompt should be displayed.
-
-        if (component.hasFocus())
-        {
-        	if (show == Show.ALWAYS
-        	||  show ==	Show.FOCUS_GAINED)
-        		setVisible( true );
-        	else
-        		setVisible( false );
-        }
-        else
-        {
-        	if (show == Show.ALWAYS
-        	||  show ==	Show.FOCUS_LOST)
-        		setVisible( true );
-        	else
-        		setVisible( false );
-        }
+        if (component.hasFocus()) setVisible(show == Show.ALWAYS || show == Show.FOCUS_GAINED);
+        else setVisible(show == Show.ALWAYS || show == Show.FOCUS_LOST);
 	}
 
 //  Implement FocusListener
