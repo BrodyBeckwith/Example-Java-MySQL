@@ -1,11 +1,17 @@
 package org.example;
 
+import net.efabrika.DBTablePrinter;
+
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.Rectangle2D;
-import java.beans.PropertyChangeListener;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -19,6 +25,7 @@ public class WindowPanel extends JPanel
     private final AtomicBoolean attemptingLogin = new AtomicBoolean(false);
 //    volatile boolean attemptingLogin = false;
     volatile boolean enteredInvalidUsernamePassword = false;
+    Map<Integer, List<JButton>> menuButtonMap = new HashMap<>();
 
     public WindowPanel(Window window)
     {
@@ -40,6 +47,11 @@ public class WindowPanel extends JPanel
         this.passwordTextField.addActionListener(this.getLoginAction());
         TextPrompt passwordPrompt = new TextPrompt("Password", passwordTextField);
         this.add(passwordTextField);
+
+        menuButtonMap.put(0, this.getOverviewButtons());
+        menuButtonMap.put(1, this.getStaffButtons());
+        menuButtonMap.put(2, this.getCustomerButtons());
+        menuButtonMap.put(3, this.getsCarsButtons());
     }
 
     @Override
@@ -117,50 +129,68 @@ public class WindowPanel extends JPanel
                     WindowPanel.this.remove(usernameTextField);
                     WindowPanel.this.remove(passwordTextField);
 
-                    WindowPanel.this.add(new JButton(new Action()
+                    JMenuBar jMenuBar = new JMenuBar();
+                    String[] fileCommands = { "Overview", "Staff", "Customers", "Cars", "\n", "Exit" };
+                    JMenu jMenu = new JMenu("Menus");
+                    for (String command : fileCommands)
                     {
-                        @Override
-                        public Object getValue(String key)
+                        if (command.equals("\n"))
                         {
-                            return null;
+                            jMenu.addSeparator();
+                            continue;
                         }
+                        JMenuItem jMenuItem = new JMenuItem(command);
 
-                        @Override
-                        public void putValue(String key, Object value)
+                        jMenuItem.addActionListener(event1 ->
                         {
+                            switch (event1.getActionCommand())
+                            {
+                                case "Overview":
+                                    WindowPanel.this.removeAll();
+                                    for (JButton jbutton : WindowPanel.this.menuButtonMap.get(0))
+                                    {
+                                        WindowPanel.this.add(jbutton);
+                                    }
+                                    break;
+                                case "Staff":
+                                    WindowPanel.this.removeAll();
+                                    for (JButton jbutton : WindowPanel.this.menuButtonMap.get(1))
+                                    {
+                                        WindowPanel.this.add(jbutton);
+                                    }
+                                    break;
+                                case "Customers":
+                                    WindowPanel.this.removeAll();
+                                    for (JButton jbutton : WindowPanel.this.menuButtonMap.get(2))
+                                    {
+                                        WindowPanel.this.add(jbutton);
+                                    }
+                                    break;
+                                case "Cars":
+                                    WindowPanel.this.removeAll();
+                                    for (JButton jbutton : WindowPanel.this.menuButtonMap.get(3))
+                                    {
+                                        WindowPanel.this.add(jbutton);
+                                    }
+                                    break;
+                                case "Exit":
+                                    System.exit(0);
+                            }
 
-                        }
+                            WindowPanel.this.revalidate();
+                        });
+                        jMenu.add(jMenuItem);
+                    }
+                    jMenuBar.add(jMenu);
+                    WindowPanel.this.window.setJMenuBar(jMenuBar);
+                    WindowPanel.this.window.revalidate();
 
-                        @Override
-                        public void setEnabled(boolean b)
-                        {
-
-                        }
-
-                        @Override
-                        public boolean isEnabled()
-                        {
-                            return false;
-                        }
-
-                        @Override
-                        public void addPropertyChangeListener(PropertyChangeListener listener)
-                        {
-
-                        }
-
-                        @Override
-                        public void removePropertyChangeListener(PropertyChangeListener listener)
-                        {
-
-                        }
-
-                        @Override
-                        public void actionPerformed(ActionEvent e)
-                        {
-
-                        }
-                    }));
+                    WindowPanel.this.removeAll();
+                    for (JButton jbutton : WindowPanel.this.menuButtonMap.get(0))
+                    {
+                        WindowPanel.this.add(jbutton);
+                    }
+                    WindowPanel.this.revalidate();
                 }
                 else
                 {
@@ -170,5 +200,282 @@ public class WindowPanel extends JPanel
 
 //            attemptingLogin = true;
         };
+    }
+
+    public List<JButton> getOverviewButtons()
+    {
+        List<JButton> buttons = new ArrayList<>();
+
+        JButton staffButton = new JButton("Staff");
+        staffButton.addActionListener(event -> ConnectionManager.getInstance().getConnection().whenCompleteAsync((connection, throwable1) ->
+        {
+            try
+            {
+                ResultSet resultSet = connection.createStatement().executeQuery("SELECT * FROM Staff;");
+                DBTablePrinter.printResultSet(resultSet);
+                connection.close();
+            }
+            catch (SQLException ignored) {}
+        }));
+        buttons.add(staffButton);
+
+        JButton vehicleDetailsButton = new JButton("Vehicle Details");
+        vehicleDetailsButton.addActionListener(event -> ConnectionManager.getInstance().getConnection().whenCompleteAsync((connection, throwable1) ->
+        {
+            try
+            {
+                ResultSet resultSet = connection.createStatement().executeQuery("SELECT * FROM Vehicle_Details;");
+                DBTablePrinter.printResultSet(resultSet);
+                connection.close();
+            }
+            catch (SQLException ignored) {}
+        }));
+        buttons.add(vehicleDetailsButton);
+
+        JButton staffPerformanceButton = new JButton("Staff Performance");
+        staffPerformanceButton.addActionListener(event -> ConnectionManager.getInstance().getConnection().whenCompleteAsync((connection, throwable1) ->
+        {
+            try
+            {
+                ResultSet resultSet = connection.createStatement().executeQuery("SELECT * FROM Staff_Performance;");
+                DBTablePrinter.printResultSet(resultSet);
+                connection.close();
+            }
+            catch (SQLException ignored) {}
+        }));
+        buttons.add(staffPerformanceButton);
+
+        JButton customerInformationButton = new JButton("Customer Information");
+        customerInformationButton.addActionListener(event -> ConnectionManager.getInstance().getConnection().whenCompleteAsync((connection, throwable1) ->
+        {
+            try
+            {
+                ResultSet resultSet = connection.createStatement().executeQuery("SELECT * FROM Customer_Info;");
+                DBTablePrinter.printResultSet(resultSet);
+                connection.close();
+            }
+            catch (SQLException ignored) {}
+        }));
+        buttons.add(customerInformationButton);
+
+        JButton customerServiceButton = new JButton("Customer Service");
+        customerServiceButton.addActionListener(event -> ConnectionManager.getInstance().getConnection().whenCompleteAsync((connection, throwable1) ->
+        {
+            try
+            {
+                ResultSet resultSet = connection.createStatement().executeQuery("SELECT * FROM Customer_Service;");
+                DBTablePrinter.printResultSet(resultSet);
+                connection.close();
+            }
+            catch (SQLException ignored) {}
+        }));
+        buttons.add(customerServiceButton);
+
+        JButton purchaseRecordsButton = new JButton("Purchase Records");
+        purchaseRecordsButton.addActionListener(event -> ConnectionManager.getInstance().getConnection().whenCompleteAsync((connection, throwable1) ->
+        {
+            try
+            {
+                ResultSet resultSet = connection.createStatement().executeQuery("SELECT * FROM Purchase_Record;");
+                DBTablePrinter.printResultSet(resultSet);
+                connection.close();
+            }
+            catch (SQLException ignored) {}
+        }));
+        buttons.add(purchaseRecordsButton);
+
+        return buttons;
+    }
+
+    public List<JButton> getStaffButtons()
+    {
+        List<JButton> buttons = new ArrayList<>();
+
+        JButton allStaff = new JButton("All Staff");
+        allStaff.addActionListener(event -> ConnectionManager.getInstance().getConnection().whenCompleteAsync((connection, throwable1) ->
+        {
+            try
+            {
+                ResultSet resultSet = connection.createStatement().executeQuery("SELECT * FROM Staff;");
+                DBTablePrinter.printResultSet(resultSet);
+                connection.close();
+            }
+            catch (SQLException ignored) {}
+        }));
+        buttons.add(allStaff);
+
+        JButton overhead = new JButton("Overhead");
+        overhead.addActionListener(event -> ConnectionManager.getInstance().getConnection().whenCompleteAsync((connection, throwable1) ->
+        {
+            try
+            {
+                ResultSet resultSet = connection.createStatement().executeQuery("SELECT Level, ROUND(AVG(Salary), 0) as Average_Salary, SUM(Price) AS Total_Revenue, SUM(Commission) AS Total_Commission \n" +
+                        "FROM Staff, Vehicle_Details, Staff_Performance\n" +
+                        "WHERE Staff_Performance.`VIN_#` = Vehicle_Details.`VIN_#` AND Staff_Performance.Employee_ID = Staff.Employee_ID GROUP BY Level;");
+                DBTablePrinter.printResultSet(resultSet);
+                connection.close();
+            }
+            catch (SQLException ignored) {}
+        }));
+        buttons.add(overhead);
+
+        JButton averagePay = new JButton("Avg. Pay");
+        averagePay.addActionListener(event -> ConnectionManager.getInstance().getConnection().whenCompleteAsync((connection, throwable1) ->
+        {
+            try
+            {
+                ResultSet resultSet = connection.createStatement().executeQuery("SELECT Employee_Name, Level, Salary FROM Staff WHERE Salary > (SELECT AVG(Salary) FROM Staff);");
+                DBTablePrinter.printResultSet(resultSet);
+                connection.close();
+            }
+            catch (SQLException ignored) {}
+        }));
+        buttons.add(averagePay);
+
+        JButton accounting = new JButton("Accounting");
+        accounting.addActionListener(event -> ConnectionManager.getInstance().getConnection().whenCompleteAsync((connection, throwable1) ->
+        {
+            try
+            {
+                ResultSet resultSet = connection.createStatement().executeQuery("SELECT * FROM Accounting_Dept;");
+                DBTablePrinter.printResultSet(resultSet);
+                connection.close();
+            }
+            catch (SQLException ignored) {}
+        }));
+        buttons.add(accounting);
+
+        JButton promote = new JButton("Promote");
+        promote.addActionListener(event -> ConnectionManager.getInstance().getConnection().whenCompleteAsync((connection, throwable1) ->
+        {
+            // Transaction...
+            try
+            {
+                connection.setAutoCommit(false);
+                connection.createStatement().executeUpdate("UPDATE Staff SET Level = 'Junior', Salary = 55000 WHERE Employee_ID = 0020;");
+
+                // Lets print to check our changes
+                ResultSet resultSet = connection.createStatement().executeQuery("SELECT * FROM Staff;");
+                DBTablePrinter.printResultSet(resultSet);
+
+                // Undo changes and print the table to ensure.
+                connection.rollback();
+                resultSet = connection.createStatement().executeQuery("SELECT * FROM Staff;");
+                DBTablePrinter.printResultSet(resultSet);
+            }
+            catch (SQLException ignored) {}
+        }));
+        buttons.add(promote);
+
+        JButton terminate = new JButton("Terminate");
+        terminate.addActionListener(event -> ConnectionManager.getInstance().getConnection().whenCompleteAsync((connection, throwable1) ->
+        {
+            try
+            {
+                connection.createStatement().executeUpdate("DELETE FROM Staff WHERE Employee_ID = 0000;");
+                connection.close();
+            }
+            catch (SQLException ignored) {}
+        }));
+        buttons.add(terminate);
+
+        return buttons;
+    }
+
+    public List<JButton> getCustomerButtons()
+    {
+        List<JButton> buttons = new ArrayList<>();
+
+        JButton allStaff = new JButton("All Customers");
+        allStaff.addActionListener(event -> ConnectionManager.getInstance().getConnection().whenCompleteAsync((connection, throwable1) ->
+        {
+            try
+            {
+                ResultSet resultSet = connection.createStatement().executeQuery("SELECT Name, Age, City, Brand_Name, Model_Name\n" +
+                        " FROM Customer_Info, Purchase_Record, Vehicle_Details\n" +
+                        " WHERE Customer_Info.Customer_ID = Purchase_Record.Customer_ID\n" +
+                        " AND Purchase_Record.`VIN_#` = Vehicle_Details.`VIN_#`;");
+                DBTablePrinter.printResultSet(resultSet);
+                connection.close();
+            }
+            catch (SQLException ignored) {}
+        }));
+        buttons.add(allStaff);
+
+        JButton carsPurchased = new JButton("Cars Purchased");
+        carsPurchased.addActionListener(event -> ConnectionManager.getInstance().getConnection().whenCompleteAsync((connection, throwable1) ->
+        {
+            try
+            {
+                ResultSet resultSet = connection.createStatement().executeQuery("SELECT Employee_ID, Customer_ID, `VIN_#`, Sale_Date FROM Staff_Performance NATURAL JOIN Customer_Service NATURAL JOIN Purchase_Record;");
+                DBTablePrinter.printResultSet(resultSet);
+                connection.close();
+            }
+            catch (SQLException ignored) {}
+        }));
+        buttons.add(carsPurchased);
+
+        JButton demographics = new JButton("Demographics");
+        demographics.addActionListener(event -> ConnectionManager.getInstance().getConnection().whenCompleteAsync((connection, throwable1) ->
+        {
+            try
+            {
+                ResultSet resultSet = connection.createStatement().executeQuery("SELECT City, COUNT(City) AS Customers_Per_City, ROUND(AVG(age),0) AS Average_Age \n" +
+                        "FROM Customer_Info GROUP BY City;");
+                DBTablePrinter.printResultSet(resultSet);
+                connection.close();
+            }
+            catch (SQLException ignored) {}
+        }));
+        buttons.add(demographics);
+
+        JButton tradeIn = new JButton("Trade In");
+        tradeIn.addActionListener(event -> ConnectionManager.getInstance().getConnection().whenCompleteAsync((connection, throwable1) ->
+        {
+            try
+            {
+                ResultSet resultSet = connection.createStatement().executeQuery("SELECT Name, Brand_Name, Model_Name, Sale_Date, trade(Price) AS Trade_In FROM Customer_Info NATURAL JOIN Purchase_Record NATURAL JOIN Vehicle_Details\n" +
+                        "WHERE Sale_Date LIKE '%2019%' OR Sale_Date LIKE '%2018%' AND Purchase_Record.`VIN_#` = Vehicle_Details.`VIN_#`;");
+                DBTablePrinter.printResultSet(resultSet);
+                connection.close();
+            }
+            catch (SQLException ignored) {}
+        }));
+        buttons.add(tradeIn);
+
+        return buttons;
+    }
+
+    public List<JButton> getsCarsButtons()
+    {
+        List<JButton> buttons = new ArrayList<>();
+
+        JButton allCars = new JButton("All Cars");
+        allCars.addActionListener(event -> ConnectionManager.getInstance().getConnection().whenCompleteAsync((connection, throwable1) ->
+        {
+            try
+            {
+                ResultSet resultSet = connection.createStatement().executeQuery("SELECT * FROM Vehicle_Details;");
+                DBTablePrinter.printResultSet(resultSet);
+                connection.close();
+            }
+            catch (SQLException ignored) {}
+        }));
+        buttons.add(allCars);
+
+        JButton remaining = new JButton("Remaining");
+        remaining.addActionListener(event -> ConnectionManager.getInstance().getConnection().whenCompleteAsync((connection, throwable1) ->
+        {
+            try
+            {
+                ResultSet resultSet = connection.createStatement().executeQuery("CALL Remaining_Inventory();");
+                DBTablePrinter.printResultSet(resultSet);
+                connection.close();
+            }
+            catch (SQLException ignored) {}
+        }));
+        buttons.add(remaining);
+
+        return buttons;
     }
 }
