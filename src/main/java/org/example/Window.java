@@ -1,9 +1,8 @@
 package org.example;
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import javax.swing.JFrame;
+import javax.swing.UIManager;
+import java.awt.Dimension;
 
 public class Window extends JFrame
 {
@@ -11,7 +10,7 @@ public class Window extends JFrame
 
     public Window()
     {
-        super("MySQL Example");
+        super("Car Dealership Menu");
 
         try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
         catch (Exception ignored) { }
@@ -19,43 +18,6 @@ public class Window extends JFrame
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         this.setResizable(true);
-
-//        JMenuBar jMenuBar = new JMenuBar();
-//        String[] fileCommands = { "Overview", "Staff", "Customers", "Cars", "\n", "Exit" };
-//        JMenu jMenu = new JMenu("Menus");
-//        for (String command : fileCommands)
-//        {
-//            if (command.equals("\n"))
-//            {
-//                jMenu.addSeparator();
-//                continue;
-//            }
-//            JMenuItem jMenuItem = new JMenuItem(command);
-//
-//            jMenuItem.addActionListener(new ActionListener()
-//            {
-//                @Override
-//                public void actionPerformed(ActionEvent event)
-//                {
-//                    switch (event.getActionCommand())
-//                    {
-//                        case "Overview":
-//                            break;
-//                        case "Staff":
-//                            break;
-//                        case "Customers":
-//                            break;
-//                        case "Cars":
-//                            break;
-//                        case "Exit":
-//                            System.exit(0);
-//                    }
-//                }
-//            });
-//            jMenu.add(jMenuItem);
-//        }
-//        jMenuBar.add(jMenu);
-//        this.setJMenuBar(jMenuBar);
 
         this.windowPanel = new WindowPanel(this);
         this.add(this.windowPanel);

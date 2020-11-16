@@ -7,7 +7,6 @@ import org.fusesource.jansi.AnsiConsole;
 
 import java.beans.PropertyVetoException;
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -86,14 +85,6 @@ public class ConnectionManager
             try
             {
                 System.out.println(Ansi.ansi().fgBrightGreen().a("MySQL Connection successful ").fgBrightMagenta().a("(" + (System.currentTimeMillis() - startTime) + "ms)").reset());
-
-                // Run a test query as an example to show we can interact with the database
-//                System.out.println("Show the name level and salary of all staff who earn more than the average of all Staff");
-//                ResultSet resultSet = connection.createStatement().executeQuery("select Employee_Name, Level, Salary from Staff where Salary > (select avg(Salary) from Staff);");
-//                while (resultSet.next())
-//                {
-//                    System.out.println(resultSet.getString(1) + " " + resultSet.getString(2) + " " + resultSet.getInt(3));
-//                }
 
                 connection.close();
                 future.complete(true);

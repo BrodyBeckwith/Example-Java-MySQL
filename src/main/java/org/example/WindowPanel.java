@@ -1,9 +1,24 @@
 package org.example;
 
 import net.efabrika.DBTablePrinter;
+import org.fusesource.jansi.Ansi;
 
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.JButton;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
+import java.awt.Color;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.event.ActionListener;
 import java.awt.geom.Rectangle2D;
 import java.sql.ResultSet;
@@ -21,10 +36,9 @@ public class WindowPanel extends JPanel
     JTextField usernameTextField;
     JPasswordField passwordTextField;
 
-    volatile Boolean successfulLogin = null;
+    private final AtomicBoolean successfulLogin = new AtomicBoolean(false);
     private final AtomicBoolean attemptingLogin = new AtomicBoolean(false);
-//    volatile boolean attemptingLogin = false;
-    volatile boolean enteredInvalidUsernamePassword = false;
+    private final AtomicBoolean enteredInvalidUsernamePassword = new AtomicBoolean(false);
     Map<Integer, List<JButton>> menuButtonMap = new HashMap<>();
 
     public WindowPanel(Window window)
@@ -78,7 +92,7 @@ public class WindowPanel extends JPanel
         g2.fill(new Rectangle2D.Double(5, 5, this.getWidth() - 10, this.getHeight() - 10));
 
         if (this.attemptingLogin.get()) this.drawStringToCenterOfScreen(g2, "Attempting login...", Color.white, 64, 16);
-        else if (enteredInvalidUsernamePassword) this.drawStringToCenterOfScreen(g2, "Invalid username and password combination.", Color.red, 64, 16);
+        else if (enteredInvalidUsernamePassword.get()) this.drawStringToCenterOfScreen(g2, "Invalid username and password combination.", Color.red, 64, 16);
 //        else if (successfulLogin != null)  this.drawStringToCenterOfScreen(g2, "Login Successful", Color.green, 0, 16);
     }
 
@@ -124,8 +138,8 @@ public class WindowPanel extends JPanel
 
                 if (aBoolean)
                 {
-                    WindowPanel.this.successfulLogin = true;
-                    WindowPanel.this.enteredInvalidUsernamePassword = false;
+                    WindowPanel.this.successfulLogin.set(true);
+                    WindowPanel.this.enteredInvalidUsernamePassword.set(false);
                     WindowPanel.this.remove(usernameTextField);
                     WindowPanel.this.remove(passwordTextField);
 
@@ -194,11 +208,9 @@ public class WindowPanel extends JPanel
                 }
                 else
                 {
-                    WindowPanel.this.enteredInvalidUsernamePassword = true;
+                    WindowPanel.this.enteredInvalidUsernamePassword.set(true);
                 }
             });
-
-//            attemptingLogin = true;
         };
     }
 
@@ -212,6 +224,7 @@ public class WindowPanel extends JPanel
             try
             {
                 ResultSet resultSet = connection.createStatement().executeQuery("SELECT * FROM Staff;");
+                System.out.println(Ansi.ansi().eraseScreen());
                 DBTablePrinter.printResultSet(resultSet);
                 connection.close();
             }
@@ -225,6 +238,7 @@ public class WindowPanel extends JPanel
             try
             {
                 ResultSet resultSet = connection.createStatement().executeQuery("SELECT * FROM Vehicle_Details;");
+                System.out.println(Ansi.ansi().eraseScreen());
                 DBTablePrinter.printResultSet(resultSet);
                 connection.close();
             }
@@ -238,6 +252,7 @@ public class WindowPanel extends JPanel
             try
             {
                 ResultSet resultSet = connection.createStatement().executeQuery("SELECT * FROM Staff_Performance;");
+                System.out.println(Ansi.ansi().eraseScreen());
                 DBTablePrinter.printResultSet(resultSet);
                 connection.close();
             }
@@ -251,6 +266,7 @@ public class WindowPanel extends JPanel
             try
             {
                 ResultSet resultSet = connection.createStatement().executeQuery("SELECT * FROM Customer_Info;");
+                System.out.println(Ansi.ansi().eraseScreen());
                 DBTablePrinter.printResultSet(resultSet);
                 connection.close();
             }
@@ -264,6 +280,7 @@ public class WindowPanel extends JPanel
             try
             {
                 ResultSet resultSet = connection.createStatement().executeQuery("SELECT * FROM Customer_Service;");
+                System.out.println(Ansi.ansi().eraseScreen());
                 DBTablePrinter.printResultSet(resultSet);
                 connection.close();
             }
@@ -277,6 +294,7 @@ public class WindowPanel extends JPanel
             try
             {
                 ResultSet resultSet = connection.createStatement().executeQuery("SELECT * FROM Purchase_Record;");
+                System.out.println(Ansi.ansi().eraseScreen());
                 DBTablePrinter.printResultSet(resultSet);
                 connection.close();
             }
@@ -297,6 +315,7 @@ public class WindowPanel extends JPanel
             try
             {
                 ResultSet resultSet = connection.createStatement().executeQuery("SELECT * FROM Staff;");
+                System.out.println(Ansi.ansi().eraseScreen());
                 DBTablePrinter.printResultSet(resultSet);
                 connection.close();
             }
@@ -312,6 +331,7 @@ public class WindowPanel extends JPanel
                 ResultSet resultSet = connection.createStatement().executeQuery("SELECT Level, ROUND(AVG(Salary), 0) as Average_Salary, SUM(Price) AS Total_Revenue, SUM(Commission) AS Total_Commission \n" +
                         "FROM Staff, Vehicle_Details, Staff_Performance\n" +
                         "WHERE Staff_Performance.`VIN_#` = Vehicle_Details.`VIN_#` AND Staff_Performance.Employee_ID = Staff.Employee_ID GROUP BY Level;");
+                System.out.println(Ansi.ansi().eraseScreen());
                 DBTablePrinter.printResultSet(resultSet);
                 connection.close();
             }
@@ -325,6 +345,7 @@ public class WindowPanel extends JPanel
             try
             {
                 ResultSet resultSet = connection.createStatement().executeQuery("SELECT Employee_Name, Level, Salary FROM Staff WHERE Salary > (SELECT AVG(Salary) FROM Staff);");
+                System.out.println(Ansi.ansi().eraseScreen());
                 DBTablePrinter.printResultSet(resultSet);
                 connection.close();
             }
@@ -338,6 +359,7 @@ public class WindowPanel extends JPanel
             try
             {
                 ResultSet resultSet = connection.createStatement().executeQuery("SELECT * FROM Accounting_Dept;");
+                System.out.println(Ansi.ansi().eraseScreen());
                 DBTablePrinter.printResultSet(resultSet);
                 connection.close();
             }
@@ -351,6 +373,7 @@ public class WindowPanel extends JPanel
             // Transaction...
             try
             {
+                System.out.println(Ansi.ansi().eraseScreen());
                 connection.setAutoCommit(false);
                 connection.createStatement().executeUpdate("UPDATE Staff SET Level = 'Junior', Salary = 55000 WHERE Employee_ID = 0020;");
 
@@ -359,6 +382,7 @@ public class WindowPanel extends JPanel
                 DBTablePrinter.printResultSet(resultSet);
 
                 // Undo changes and print the table to ensure.
+                System.out.println(Ansi.ansi().fgYellow() + "Reverting database to unchanged state.");
                 connection.rollback();
                 resultSet = connection.createStatement().executeQuery("SELECT * FROM Staff;");
                 DBTablePrinter.printResultSet(resultSet);
@@ -372,6 +396,8 @@ public class WindowPanel extends JPanel
         {
             try
             {
+                System.out.println(Ansi.ansi().eraseScreen());
+                System.out.println(Ansi.ansi().fgRed() + "Deleting 1 employee from the Staff table.");
                 connection.createStatement().executeUpdate("DELETE FROM Staff WHERE Employee_ID = 0000;");
                 connection.close();
             }
@@ -395,6 +421,7 @@ public class WindowPanel extends JPanel
                         " FROM Customer_Info, Purchase_Record, Vehicle_Details\n" +
                         " WHERE Customer_Info.Customer_ID = Purchase_Record.Customer_ID\n" +
                         " AND Purchase_Record.`VIN_#` = Vehicle_Details.`VIN_#`;");
+                System.out.println(Ansi.ansi().eraseScreen());
                 DBTablePrinter.printResultSet(resultSet);
                 connection.close();
             }
@@ -408,6 +435,7 @@ public class WindowPanel extends JPanel
             try
             {
                 ResultSet resultSet = connection.createStatement().executeQuery("SELECT Employee_ID, Customer_ID, `VIN_#`, Sale_Date FROM Staff_Performance NATURAL JOIN Customer_Service NATURAL JOIN Purchase_Record;");
+                System.out.println(Ansi.ansi().eraseScreen());
                 DBTablePrinter.printResultSet(resultSet);
                 connection.close();
             }
@@ -422,6 +450,7 @@ public class WindowPanel extends JPanel
             {
                 ResultSet resultSet = connection.createStatement().executeQuery("SELECT City, COUNT(City) AS Customers_Per_City, ROUND(AVG(age),0) AS Average_Age \n" +
                         "FROM Customer_Info GROUP BY City;");
+                System.out.println(Ansi.ansi().eraseScreen());
                 DBTablePrinter.printResultSet(resultSet);
                 connection.close();
             }
@@ -436,6 +465,7 @@ public class WindowPanel extends JPanel
             {
                 ResultSet resultSet = connection.createStatement().executeQuery("SELECT Name, Brand_Name, Model_Name, Sale_Date, trade(Price) AS Trade_In FROM Customer_Info NATURAL JOIN Purchase_Record NATURAL JOIN Vehicle_Details\n" +
                         "WHERE Sale_Date LIKE '%2019%' OR Sale_Date LIKE '%2018%' AND Purchase_Record.`VIN_#` = Vehicle_Details.`VIN_#`;");
+                System.out.println(Ansi.ansi().eraseScreen());
                 DBTablePrinter.printResultSet(resultSet);
                 connection.close();
             }
@@ -456,6 +486,7 @@ public class WindowPanel extends JPanel
             try
             {
                 ResultSet resultSet = connection.createStatement().executeQuery("SELECT * FROM Vehicle_Details;");
+                System.out.println(Ansi.ansi().eraseScreen());
                 DBTablePrinter.printResultSet(resultSet);
                 connection.close();
             }
@@ -469,6 +500,7 @@ public class WindowPanel extends JPanel
             try
             {
                 ResultSet resultSet = connection.createStatement().executeQuery("CALL Remaining_Inventory();");
+                System.out.println(Ansi.ansi().eraseScreen());
                 DBTablePrinter.printResultSet(resultSet);
                 connection.close();
             }
