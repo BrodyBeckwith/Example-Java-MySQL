@@ -382,7 +382,7 @@ public class WindowPanel extends JPanel
                 DBTablePrinter.printResultSet(resultSet);
 
                 // Undo changes and print the table to ensure.
-                System.out.println(Ansi.ansi().fgYellow() + "Reverting database to unchanged state.");
+                System.out.println(Ansi.ansi().fgYellow().a("Reverting database to unchanged state.").reset());
                 connection.rollback();
                 resultSet = connection.createStatement().executeQuery("SELECT * FROM Staff;");
                 DBTablePrinter.printResultSet(resultSet);
@@ -397,7 +397,7 @@ public class WindowPanel extends JPanel
             try
             {
                 System.out.println(Ansi.ansi().eraseScreen());
-                System.out.println(Ansi.ansi().fgRed() + "Deleting 1 employee from the Staff table.");
+                System.out.println(Ansi.ansi().fgBrightRed().a("Deleting 1 employee from Staff table...").reset());
                 connection.createStatement().executeUpdate("DELETE FROM Staff WHERE Employee_ID = 0000;");
                 connection.close();
             }
